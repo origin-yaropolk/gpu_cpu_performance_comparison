@@ -1,5 +1,6 @@
 #include "cpu_helper_api.h"
 #include "thread_pool.h"
+#include <cassert>
 
 namespace Helpers
 {
@@ -23,7 +24,7 @@ void processPartJob(ThreadSpecificDataHolder specific)
 				value += row[k] * secondMatrixColumn[k];
 			}
 
-			specific.resultMatrix[i][j] = value;
+			specific.resultMatrix[specific.startRow + i][j] = value;
 		}
 	}
 }

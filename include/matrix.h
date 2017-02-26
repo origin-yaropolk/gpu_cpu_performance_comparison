@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <cassert>
 
 namespace PerfComparison
 {
@@ -20,6 +21,14 @@ public:
 			m_sequence.resize(m_columns, Tp{});
 		}
 
+		Row(Row const& other)
+		{
+			assert(other.m_sequence.size());
+
+			m_sequence = other.m_sequence;
+			m_columns = other.m_columns;
+		}
+
 		Tp& operator[](size_t idx) noexcept
 		{
 			return m_sequence[idx];
@@ -32,7 +41,7 @@ public:
 
 		Tp& at(size_t idx)
 		{
-			if (idx >= size())
+			if (idx >= m_sequence.size())
 			{
 				throw std::out_of_range{ "Index value is out of range" };
 			}
@@ -42,7 +51,7 @@ public:
 
 		const Tp& at(size_t idx) const
 		{
-			if (idx >= size())
+			if (idx >= m_sequence.size())
 			{
 				throw std::out_of_range{ "Index value is out of range" };
 			}

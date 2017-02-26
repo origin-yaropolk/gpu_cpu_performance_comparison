@@ -20,7 +20,7 @@ class thread_pool
 {
 	/** DATA AND INTERNAL DATA TYPES **/
 
-	// releases only move semantic
+	// implemented only move semantic
 	struct task_wrapper
 	{
 		//-------------------------------------------------------------------
@@ -29,7 +29,7 @@ class thread_pool
 		//-------------------------------------------------------------------
 	};
 
-	// releases only move semantic
+	// implemented only move semantic
 	struct thread_synchronization
 	{
 		//-------------------------------------------------------------------
@@ -96,10 +96,8 @@ public:
 		result_type future_object = new_task.task_.get_future();
 		thread_synchronization& ts = find_minimum_load_queue();
 
-		std::unique_lock<std::mutex> locker{ ts.mutex_ };
-		put_task(ts, std::move(new_task), std::defer_lock);
+		put_task(ts, std::move(new_task));
 		ts.condition_.notify_one();
-		locker.unlock();
 
 		return future_object;
 	}
@@ -146,11 +144,6 @@ private:
 			// executes all tasks from queue
 			for (;;)
 			{
-				if (callable.first == false)
-				{
-					break;
-				}
-
 				// double check
 				// if this thread works and gets the complete signal
 				// complete signal will be sent without valid packaged_task
@@ -164,6 +157,11 @@ private:
 
 				callable.second.task_();
 				callable = get_task(ts);
+
+				if (callable.first == false)
+				{
+					break;
+				}
 			}
 
 			// for correct exit from loop

@@ -5,6 +5,8 @@
 #include "thread_pool.h"
 #include <vector>
 #include <iostream>
+#include <future>
+#include <cassert>
 
 CPU_API_EXPORT bool multiply_matrices(
 	PerfComparison::Matrix<double> const& first,
@@ -17,14 +19,19 @@ CPU_API_EXPORT bool multiply_matrices(
 	black_box::thread_pool<void>& threadPool =
 		black_box::thread_pool<void>::instance();
 
+	std::vector<black_box::thread_pool<void>::result_type> futures;
+
 	for (size_t i = 0; i < taskPackets.size(); ++i)
 	{
-		threadPool.add_task(Helpers::processPartJob, taskPackets[i]);
+		futures.push_back(threadPool.add_task(Helpers::processPartJob, taskPackets[i]));
 	}
 
 	processPartJob(taskPackets[taskPackets.size() - 1]);
 
-	threadPool.wait_all();
+	for (auto const& future : futures)
+	{
+		future.wait();
+	}
 
 	return true;
 }
