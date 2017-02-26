@@ -19,19 +19,14 @@ CPU_API_EXPORT bool multiply_matrices(
 	black_box::thread_pool<void>& threadPool =
 		black_box::thread_pool<void>::instance();
 
-	std::vector<black_box::thread_pool<void>::result_type> futures;
-
 	for (size_t i = 0; i < taskPackets.size(); ++i)
 	{
-		futures.push_back(threadPool.add_task(Helpers::processPartJob, taskPackets[i]));
+		threadPool.add_task(Helpers::processPartJob, taskPackets[i]);
 	}
 
 	processPartJob(taskPackets[taskPackets.size() - 1]);
 
-	for (auto const& future : futures)
-	{
-		future.wait();
-	}
+	threadPool.wait_all();
 
 	return true;
 }

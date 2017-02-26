@@ -21,14 +21,6 @@ public:
 			m_sequence.resize(m_columns, Tp{});
 		}
 
-		Row(Row const& other)
-		{
-			assert(other.m_sequence.size());
-
-			m_sequence = other.m_sequence;
-			m_columns = other.m_columns;
-		}
-
 		Tp& operator[](size_t idx) noexcept
 		{
 			return m_sequence[idx];

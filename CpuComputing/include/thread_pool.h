@@ -156,6 +156,14 @@ private:
 				}
 
 				callable.second.task_();
+
+				//
+				// Remove task from queue must be after
+				// it executed !!!
+				// Otherwise possibly would be crash
+				//
+				ts.queue_.pop();
+
 				callable = get_task(ts);
 
 				if (callable.first == false)
@@ -195,7 +203,7 @@ private:
 		if (success_flag)
 		{
 			tw = std::move(ts.queue_.front());
-			ts.queue_.pop();
+			//ts.queue_.pop();
 		}
 
 		return std::make_pair(success_flag, std::move(tw));
@@ -212,7 +220,7 @@ private:
 		if (success_flag)
 		{
 			tw = std::move(ts.queue_.front());
-			ts.queue_.pop();
+			//ts.queue_.pop();
 		}
 
 		return std::make_pair(success_flag, std::move(tw));
