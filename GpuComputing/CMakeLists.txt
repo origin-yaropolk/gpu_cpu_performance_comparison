@@ -14,9 +14,10 @@ aux_source_directory(${SOURCES_ROOT} DLL_SOURCES)
 
 # I use it for VS2015, in order to IDE shows me header files
 file(GLOB_RECURSE HEADERS "./include/*.h")
+file(GLOB_RECURSE CUDA_HEADERS "./include/*.cuh")
 
 include_directories(${GPU_HEADERS_ROOT})
 
-cuda_add_library(${GPU_LIB} STATIC ${DLL_SOURCES} ./src/kernel.cu ${HEADERS})
+cuda_add_library(${GPU_LIB} STATIC ${DLL_SOURCES} ./src/kernel.cu ${HEADERS} ${CUDA_HEADERS})
 
 target_link_libraries(${GPU_LIB})
