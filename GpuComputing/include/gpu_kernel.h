@@ -17,8 +17,13 @@ extern "C"
 {
 #endif
 
-GPU_API_EXPORT void GPU_test(PerfComparison::Matrix<float> const& A, PerfComparison::Matrix<float> const& B, PerfComparison::Matrix<float> &C, float& ComputingTime);
-GPU_API_EXPORT void DisplayMatrix(double const*, size_t,char*);
+GPU_API_EXPORT void GPU_test(
+	PerfComparison::Matrix<float> const& A, 
+	PerfComparison::Matrix<float> const& B, 
+	PerfComparison::Matrix<float> &C, float& ComputingTime
+);
+
+GPU_API_EXPORT void DisplayMatrix(double const*, size_t, char*);
 	
 #ifdef __cplusplus
 }

@@ -9,7 +9,7 @@ void processPartJob(ThreadSpecificDataHolder specific)
 {
 	for (size_t i = 0; i < specific.size; ++i)
 	{
-		PerfComparison::Matrix<double>::Row const& row =
+		PerfComparison::Matrix<double>::Row row =
 			specific.firstSourceMatrix[specific.startRow + i];
 
 		for (size_t j = 0; j < specific.secondSourceMatrix.columns(); ++j)
