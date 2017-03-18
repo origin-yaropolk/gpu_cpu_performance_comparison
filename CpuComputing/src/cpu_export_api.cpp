@@ -16,17 +16,17 @@ CPU_API_EXPORT bool multiply_matrices(
 	std::vector<Helpers::ThreadSpecificDataHolder> taskPackets =
 		Helpers::distributeTasks(first, second, result);
 
-	black_box::thread_pool<void>& threadPool =
-		black_box::thread_pool<void>::instance();
+	BlackBox::ThreadPool<void>& threadPool =
+		BlackBox::ThreadPool<void>::instance();
 
 	for (size_t i = 0; i < taskPackets.size(); ++i)
 	{
-		threadPool.add_task(Helpers::processPartJob, taskPackets[i]);
+		threadPool.addTask(Helpers::processPartJob, taskPackets[i]);
 	}
 
 	processPartJob(taskPackets[taskPackets.size() - 1]);
 
-	threadPool.wait_all();
+	threadPool.waitAll();
 
 	return true;
 }

@@ -44,11 +44,11 @@ std::vector<ThreadSpecificDataHolder> distributeTasks(
 		throw std::invalid_argument{ "Incompatible sizes of matrices" };
 	}
 
-	black_box::thread_pool<void>& threadPool = 
-		black_box::thread_pool<void>::instance();
+	BlackBox::ThreadPool<void>& threadPool = 
+		BlackBox::ThreadPool<void>::instance();
 
 	// plus main thread
-	size_t threadsNumber = threadPool.working_threads() + 1;
+	size_t threadsNumber = threadPool.workingThreads() + 1;
 
 	const size_t payloadPerThread = first.rows() / threadsNumber;
 	const size_t remainderPerThread = first.rows() % threadsNumber;

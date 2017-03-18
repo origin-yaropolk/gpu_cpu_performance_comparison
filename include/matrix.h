@@ -23,7 +23,6 @@ public:
 			, m_rowIdx{ rowIdx }
 		{}
 
-
 	public:
 
 		Tp& operator[](size_t idx)
@@ -72,12 +71,16 @@ public:
 
 	class Column
 	{
-	public:
+	private:
+		friend class Matrix<Tp>;
+
 		Column(std::shared_ptr<Tp> matrix, size_t size, size_t columnIdx)
 			: m_matrix{ matrix }
 			, m_size{ size }
 			, m_columnIdx{ columnIdx }
 		{}
+
+	public:
 
 		Tp& operator[](size_t idx)
 		{

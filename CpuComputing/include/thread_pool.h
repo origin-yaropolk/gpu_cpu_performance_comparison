@@ -1,139 +1,157 @@
 #pragma once
 
-#ifndef THREAD_POOL_HPP_INCLUDED
-#define THREAD_POOL_HPP_INCLUDED
-
 #include <condition_variable>
 #include <future>
 #include <thread>
 #include <mutex>
 #include <queue>
 #include <map>
-#include <stddef.h> /** for type size_t which out of namespace std */
+#include <cstddef>
+#include <windows.h>
 
-namespace black_box
+namespace BlackBox
 {
+
 //--------------------------------------------------------------
 
 template <typename ReturnT>
-class thread_pool
+class ThreadPool
 {
 	/** DATA AND INTERNAL DATA TYPES **/
+private:
 
 	// implemented only move semantic
-	struct task_wrapper
+	struct TaskWrapper
 	{
-		//-------------------------------------------------------------------
-		std::packaged_task<ReturnT()> task_;
-		bool complete_signal_;
-		//-------------------------------------------------------------------
+		std::packaged_task<ReturnT()> task;
+		bool completeSignal;
 	};
 
 	// implemented only move semantic
-	struct thread_synchronization
+	struct ThreadSynchronization
 	{
-		//-------------------------------------------------------------------
-		std::condition_variable condition_;
-		std::mutex mutable mutex_;
-		std::queue<task_wrapper> queue_;
-		//-------------------------------------------------------------------
+		std::condition_variable condition;
+		std::mutex mutable mutex;
+		std::queue<TaskWrapper> queue;
 	};
 
-	size_t                                          threads_number_;
-	std::vector <std::thread>                       threads_;
-	std::map    <size_t, thread_synchronization>    threads_synchronize_;
-	/**^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^**/
-	/**^^^^^^^^^^id of thread and synchronization variables^^^^^^^^^^^**/
+private:
 
-	/** id == 0:
-	*
-	*   threads_[0] - thread
-	*   threads_synchronize_[0] - its own synchronization entities
-	*
-	**/
+	size_t m_threadsNumber;
+	std::vector<std::thread> m_threads;
+	std::map<size_t, ThreadSynchronization> m_threadsSynchronize;
+	bool m_useTimeout;
 
-	thread_pool() : thread_pool{ std::thread::hardware_concurrency() - 1 }
-	{ }
+	// timeout control
+	std::thread m_threadTimeoutController;
+	std::condition_variable m_waitCondition;
+	std::mutex m_mutex;
+	size_t m_counter;
 
-	thread_pool(size_t threads_n) :
-		threads_number_{ threads_n },
-		threads_{ threads_number_ }
+private:
+
+	ThreadPool() : ThreadPool(std::thread::hardware_concurrency() - 1)
 	{
-		for (size_t i = 0; i < threads_number_; ++i)
+	}
+
+	ThreadPool(size_t threads_n) 
+		: m_threadsNumber(threads_n)
+		, m_threads(m_threadsNumber)
+		, m_useTimeout(false)
+	{
+		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
-			threads_synchronize_[i];
-			threads_[i] = std::thread{ &thread_pool::task_handler, this, i };
+			m_threadsSynchronize[i];
+			m_threads[i] = std::thread(&ThreadPool::taskHandler, this, i);
 		}
+
+		m_threadTimeoutController = std::thread(&ThreadPool::timeoutController, this);
 	}
 
 public:
 
-	typedef std::shared_future<ReturnT> result_type;
+	typedef std::shared_future<ReturnT> ResultType;
 
-	static thread_pool& instance()
+	static ThreadPool& instance()
 	{
-		static thread_pool threadPool;
+		static ThreadPool threadPool;
 		return threadPool;
 	}
 
-	~thread_pool()
+	~ThreadPool()
 	{
-		for (size_t i = 0; i < threads_number_; ++i)
+		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
-			complete_thread(i);
+			completeThread(i);
 
-			if (threads_[i].joinable())
+			if (m_threads[i].joinable())
 			{
-				threads_[i].join();
+				m_threads[i].join();
 			}
 		}
 	}
 
 	template <typename F, typename... Args>
-	result_type add_task(F f, Args&&... params)
+	ResultType addTask(F f, Args&&... params)
 	{
-		task_wrapper new_task = binder(f, std::forward<Args>(params)...);
-		result_type future_object = new_task.task_.get_future();
-		thread_synchronization& ts = find_minimum_load_queue();
+		TaskWrapper newTask = binder(f, std::forward<Args>(params)...);
+		ResultType futureObject = newTask.task.get_future();
+		ThreadSynchronization& ts = findMinimumLoadQueue();
 
-		put_task(ts, std::move(new_task));
-		ts.condition_.notify_one();
+		putTask(ts, std::move(newTask));
+		ts.condition.notify_one();
 
-		return future_object;
+		return futureObject;
 	}
 
-	size_t working_threads() const
+	size_t workingThreads() const
 	{
-		return threads_number_;
+		return m_threadsNumber;
 	}
 
-	void wait_all()
+	void waitAll()
 	{
-		while (!is_all_queues_empty())
+		while (!isAllQueuesEmpty())
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds{ 1 });
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 	}
 
 private:
 
-	/** executes passed tasks */
-	void task_handler(size_t id)
+	void restartDanglingThread(size_t id)
+	{
+		TerminateThread(m_threads[id].native_handle(), 0);
+		m_threads[id] = std::thread(&ThreadPool::taskHandler, this, id);
+	}
+
+	void timeoutController()
 	{
 		for (;;)
 		{
-			//-------------------------------------------------------------------
-			thread_synchronization& ts = threads_synchronize_[id];
-			std::unique_lock<std::mutex> locker{ ts.mutex_ };
-			//-----------------------------------------------------------------
-			ts.condition_.wait(locker, [&ts] { return !ts.queue_.empty(); });
-			auto callable = get_task(ts, std::defer_lock);
-			//-----------------------------------------------------------------
+			std::unique_lock<std::mutex> lk(m_mutex);
+			m_waitCondition.wait(lk, [&] { return m_counter != 0; });
+
+
+		}
+	}
+
+	/** executes passed tasks */
+	void taskHandler(size_t id)
+	{
+		for (;;)
+		{
+			ThreadSynchronization& ts = m_threadsSynchronize[id];
+			std::unique_lock<std::mutex> locker{ ts.mutex };
+			
+			ts.condition.wait(locker, [&ts] { return !ts.queue.empty(); });
+			auto callable = getTask(ts, std::defer_lock);
+			
 			locker.unlock();
 
 			// first check
 			// if thread was slept and received the complete signal
-			if (callable.second.complete_signal_)
+			if (callable.second.completeSignal)
 			{
 				break;
 			}
@@ -149,22 +167,28 @@ private:
 				// complete signal will be sent without valid packaged_task
 				// and if that task to attempt to execute
 				// the future_error exception will be thrown
-				if (callable.second.complete_signal_)
+				if (callable.second.completeSignal)
 				{
 					double_check_complete = true;
 					break;
 				}
 
-				callable.second.task_();
+				if (m_useTimeout)
+				{
+					++m_counter;
+					m_waitCondition.notify_one();
+				}
+
+				callable.second.task();
 
 				//
 				// Remove task from queue must be after
 				// it executed !!!
 				// Otherwise possibly would be crash
 				//
-				ts.queue_.pop();
+				ts.queue.pop();
 
-				callable = get_task(ts);
+				callable = getTask(ts);
 
 				if (callable.first == false)
 				{
@@ -181,103 +205,99 @@ private:
 	}
 
 	// send complete signal for specified thread
-	void complete_thread(size_t id)
+	void completeThread(size_t id)
 	{
-		thread_synchronization& ts = threads_synchronize_[id];
+		ThreadSynchronization& ts = m_threadsSynchronize[id];
 
-		task_wrapper cs{ {}, true };
-		put_task(ts, std::move(cs));
+		TaskWrapper cs{ {}, true };
+		putTask(ts, std::move(cs));
 
-		ts.condition_.notify_one();
+		ts.condition.notify_one();
 	}
 
 	/** ATOMIC OPERATIONS **/
-	//*******************************************************************************
-	// pops the task with blocking
-	std::pair<bool, task_wrapper> get_task(thread_synchronization& ts)
-	{
-		std::lock_guard<std::mutex> locker{ ts.mutex_ };
-		bool success_flag = static_cast<bool>(ts.queue_.size());
-		task_wrapper tw{ {}, false };
 
-		if (success_flag)
+	// pops the task with blocking
+	std::pair<bool, TaskWrapper> getTask(ThreadSynchronization& ts)
+	{
+		std::lock_guard<std::mutex> locker{ ts.mutex };
+		bool successFlag = !ts.queue.empty();
+		TaskWrapper tw{ {}, false };
+
+		if (successFlag)
 		{
-			tw = std::move(ts.queue_.front());
-			//ts.queue_.pop();
+			tw = std::move(ts.queue.front());
 		}
 
-		return std::make_pair(success_flag, std::move(tw));
+		return std::make_pair(successFlag, std::move(tw));
 	}
 
 	// pops the task without blocking
-	std::pair<bool, task_wrapper> get_task(thread_synchronization& ts, std::defer_lock_t strategy)
+	std::pair<bool, TaskWrapper> getTask(ThreadSynchronization& ts, std::defer_lock_t strategy)
 	{
 		(void)strategy;
 
-		bool success_flag = static_cast<bool>(ts.queue_.size());
-		task_wrapper tw{ {}, false };
+		bool successFlag = !ts.queue.empty();
+		TaskWrapper tw{ {}, false };
 
-		if (success_flag)
+		if (successFlag)
 		{
-			tw = std::move(ts.queue_.front());
-			//ts.queue_.pop();
+			tw = std::move(ts.queue.front());
 		}
 
-		return std::make_pair(success_flag, std::move(tw));
+		return std::make_pair(successFlag, std::move(tw));
 	}
 
-	void put_task(thread_synchronization& ts, task_wrapper tw)
+	void putTask(ThreadSynchronization& ts, TaskWrapper tw)
 	{
-		std::lock_guard<std::mutex> locker{ ts.mutex_ };
-		ts.queue_.push(std::move(tw));
+		std::lock_guard<std::mutex> locker{ ts.mutex };
+		ts.queue.push(std::move(tw));
 	}
 
-	void put_task(thread_synchronization& ts, task_wrapper tw, std::defer_lock_t strategy)
+	void putTask(ThreadSynchronization& ts, TaskWrapper tw, std::defer_lock_t strategy)
 	{
 		(void)strategy;
-		ts.queue_.push(std::move(tw));
+		ts.queue.push(std::move(tw));
 	}
-	//*******************************************************************************
 
 	/** HELPER FUNCTIONS **/
 
 	template <typename F, typename... Args>
-	task_wrapper binder(F f, Args&&... params)
+	TaskWrapper binder(F f, Args&&... params)
 	{
-		//-------------------------------------------------------------------
-		auto new_callable_object = std::bind(f, std::forward<Args>(params)...);
-		task_wrapper new_wrapper{ std::packaged_task<ReturnT()>{new_callable_object}, false };
-		//-------------------------------------------------------------------
-		return new_wrapper;
+		auto newCallableObject = std::bind(f, std::forward<Args>(params)...);
+		TaskWrapper newWrapper{ std::packaged_task<ReturnT()>{newCallableObject}, false };
+		
+		return newWrapper;
 	}
 
-	thread_synchronization& find_minimum_load_queue()
+	ThreadSynchronization& findMinimumLoadQueue()
 	{
-		threads_synchronize_[0].mutex_.lock();
-		auto smallest = threads_synchronize_[0].queue_.size();
-		threads_synchronize_[0].mutex_.unlock();
+		m_threadsSynchronize[0].mutex.lock();
+		auto smallest = m_threadsSynchronize[0].queue.size();
+		m_threadsSynchronize[0].mutex.unlock();
 
-		size_t min_elem = 0;
+		size_t minElem = 0;
 
-		for (size_t i = 1; i < threads_number_; ++i)
+		for (size_t i = 1; i < m_threadsNumber; ++i)
 		{
-			std::lock_guard<std::mutex> locker{ threads_synchronize_[i].mutex_ };
-			if (threads_synchronize_[i].queue_.size() < smallest)
+			std::lock_guard<std::mutex> locker{ m_threadsSynchronize[i].mutex };
+			if (m_threadsSynchronize[i].queue.size() < smallest)
 			{
-				smallest = threads_synchronize_[i].queue_.size();
-				min_elem = i;
+				smallest = m_threadsSynchronize[i].queue.size();
+				minElem = i;
 			}
 		}
 
-		return threads_synchronize_[min_elem];
+		return m_threadsSynchronize[minElem];
 	}
 
-	bool is_all_queues_empty()
+	bool isAllQueuesEmpty()
 	{
-		for (size_t i = 0; i < threads_number_; ++i)
+		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
-			std::lock_guard<std::mutex> locker{ threads_synchronize_[i].mutex_ };
-			if (threads_synchronize_[i].queue_.size())
+			std::lock_guard<std::mutex> locker{ m_threadsSynchronize[i].mutex };
+			if (m_threadsSynchronize[i].queue.size())
 			{
 				return false;
 			}
@@ -288,5 +308,3 @@ private:
 };
 //--------------------------------------------------------------
 } // end of namespace BlackBox
-
-#endif // THREAD_POOL_HPP_INCLUDED
