@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(BIN PerformanceComparison)
+set(BIN gpu_cpu_performance_comparison)
 project(${BIN})
 
 set(SOURCES_ROOT ./src/)
-set(HEADERS_ROOT ./include/ ./CpuComputing/include/ ./GpuComputing/include/)
+set(HEADERS_ROOT ./include/ ./cpu_computing/include/ ./gpu_computing/include/)
 
 # SOURCE - list of all sources
 aux_source_directory(${SOURCES_ROOT} SOURCE)
@@ -16,11 +16,11 @@ file(GLOB_RECURSE HEADERS "./include/*.h")
 include_directories(${HEADERS_ROOT})
 
 # add subprojects
-add_subdirectory(./CpuComputing/)
-add_subdirectory(./GpuComputing/)
+add_subdirectory(./cpu_computing/)
+add_subdirectory(./gpu_computing/)
 
 # build from specified sources cpu_gpu_comparison executable
 add_executable(${BIN} ${SOURCE} ${HEADERS})
 
 # linker settings
-target_link_libraries(${BIN} CpuComputing GpuComputing)
+target_link_libraries(${BIN} cpu_computing gpu_computing)
