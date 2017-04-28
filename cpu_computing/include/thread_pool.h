@@ -37,8 +37,13 @@ private:
 
 private:
 
+#ifdef TEST_RUNNER_ENVORONMENT
+public:
+#endif
 	size_t m_threadsNumber;
 	std::vector<std::thread> m_threads;
+
+private:
 	std::map<size_t, ThreadSynchronization> m_threadsSynchronize;
 	bool m_useTimeout;
 
