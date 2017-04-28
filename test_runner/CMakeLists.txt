@@ -20,6 +20,6 @@ file(GLOB_RECURSE HEADERS "./include/*.h")
 # include files dependecies
 include_directories(${HEADERS_ROOT})
 
-add_executable(${BIN} ${SOURCES_ROOT} ${HEADERS})
+add_executable(${BIN} ${SOURCE} ${HEADERS})
 
 target_link_libraries(${BIN} cpu_computing gpu_computing)
