@@ -65,7 +65,7 @@ private:
 			m_threads[i] = std::thread(&ThreadPool::taskHandler, this, i);
 		}
 
-		m_threadTimeoutController = std::thread(&ThreadPool::timeoutController, this);
+		//m_threadTimeoutController = std::thread(&ThreadPool::timeoutController, this);
 	}
 
 public:
@@ -119,22 +119,22 @@ public:
 
 private:
 
-	void restartDanglingThread(size_t id)
-	{
-		TerminateThread(m_threads[id].native_handle(), 0);
-		m_threads[id] = std::thread(&ThreadPool::taskHandler, this, id);
-	}
-
-	void timeoutController()
-	{
-		for (;;)
-		{
-			std::unique_lock<std::mutex> lk(m_mutex);
-			m_waitCondition.wait(lk, [&] { return m_counter != 0; });
-
-
-		}
-	}
+// 	void restartDanglingThread(size_t id)
+// 	{
+// 		TerminateThread(m_threads[id].native_handle(), 0);
+// 		m_threads[id] = std::thread(&ThreadPool::taskHandler, this, id);
+// 	}
+// 
+// 	void timeoutController()
+// 	{
+// 		for (;;)
+// 		{
+// 			std::unique_lock<std::mutex> lk(m_mutex);
+// 			m_waitCondition.wait(lk, [&] { return m_counter != 0; });
+// 
+// 
+// 		}
+// 	}
 
 	/** executes passed tasks */
 	void taskHandler(size_t id)
@@ -173,11 +173,11 @@ private:
 					break;
 				}
 
-				if (m_useTimeout)
-				{
-					++m_counter;
-					m_waitCondition.notify_one();
-				}
+// 				if (m_useTimeout)
+// 				{
+// 					++m_counter;
+// 					m_waitCondition.notify_one();
+// 				}
 
 				callable.second.task();
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(GPU_LIB GpuComputing)
+set(GPU_LIB gpu_computing)
 project(${GPU_LIB})
 
 find_package(CUDA QUIET REQUIRED)

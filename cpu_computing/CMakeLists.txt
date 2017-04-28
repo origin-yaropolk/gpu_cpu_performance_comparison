@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(CPU_LIB CpuComputing)
+set(CPU_LIB cpu_computing)
 project(${CPU_LIB})
 
 # list of all source files
