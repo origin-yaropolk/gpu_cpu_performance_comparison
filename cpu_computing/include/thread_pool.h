@@ -6,6 +6,7 @@
 #include <mutex>
 #include <queue>
 #include <map>
+#include <iostream>
 #include <cstddef>
 #include <cassert>
 #include <windows.h>
@@ -34,6 +35,7 @@ private:
 		std::condition_variable condition;
 		std::mutex mutable mutex;
 		std::queue<TaskWrapper> queue;
+		std::atomic_bool threadInactive = false;
 	};
 
 	struct WatchDog
@@ -146,13 +148,30 @@ private:
 				if (m_watchDogs[id].watchDogCondition.wait_until(locker, m_watchDogs[id].timePoint + 5000 * 1ms) ==
 					std::cv_status::timeout)
 				{
-					assert(!"Function timed out");
-					// restart thread
+					std::cout << "Thread #" << id << " restarted!" << std::endl;
+
+					restartThread(id);
 				}
 			}
 
 			std::this_thread::sleep_for(1ms);
 		}
+	}
+
+	// this method potentially dangerous
+	void restartThread(size_t id)
+	{
+		m_threadsSynchronize[id].threadInactive.store(true);
+		m_watchDogs[id].taskStarted.store(false);
+
+		TerminateThread(m_threads[id].native_handle(), 0);
+		m_threads[id].join();
+
+		m_threadsSynchronize[id].queue.pop();
+
+		m_threads[id] = std::thread(&ThreadPool::taskHandler, this, id);
+
+		m_threadsSynchronize[id].threadInactive.store(false);
 	}
 
 	/** executes passed tasks */
@@ -199,13 +218,16 @@ private:
 
 				m_watchDogs[id].taskStarted.store(false);
 				m_watchDogs[id].watchDogCondition.notify_one();
-
+				
 				//
 				// Remove task from queue must be after
 				// it executed !!!
 				// Otherwise possibly would be crash
-				//
-				ts.queue.pop();
+ 				//
+				if (!m_threadsSynchronize[id].threadInactive.load())
+				{
+					ts.queue.pop();
+				}
 
 				callable = getTask(ts);
 
