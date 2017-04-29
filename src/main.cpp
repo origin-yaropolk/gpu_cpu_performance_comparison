@@ -35,7 +35,7 @@ int main()
 
 	auto start = std::chrono::high_resolution_clock::now();
 
-	multiply_matrices(matrixA, matrixB, result);
+	multiplyMatrices(matrixA, matrixB, result);
 
 	auto end = std::chrono::high_resolution_clock::now();
 

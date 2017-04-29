@@ -12,11 +12,8 @@
 
 #include "matrix.h"
 
-CPU_API_EXPORT bool multiply_matrices(
+CPU_API_EXPORT bool multiplyMatrices(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
 	PerfComparison::Matrix<double>& result
 );
-
-CPU_API_EXPORT void cpu_api_init();
-CPU_API_EXPORT void cpu_api_destroy();

@@ -8,7 +8,7 @@
 #include <future>
 #include <cassert>
 
-CPU_API_EXPORT bool multiply_matrices(
+CPU_API_EXPORT bool multiplyMatrices(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
 	PerfComparison::Matrix<double>& result)
