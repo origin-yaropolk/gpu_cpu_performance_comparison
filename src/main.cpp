@@ -11,7 +11,7 @@
 
 int main()
 {
-	const size_t n = 1024;
+	const size_t n = 128;
 
 	PerfComparison::Matrix<double> matrixA{ n, n };
 	PerfComparison::Matrix<double> matrixB{ n, n };

@@ -136,11 +136,6 @@ private:
 	void watchDog(size_t id)
 	{
 		using namespace std::chrono_literals;
-
-		auto threadExecutes = [this, id]()
-		{
-			return !m_watchDogs[id].taskStarted.load();
-		};
 		
 		while(!m_watchDogs[id].completeWatchDogThread.load())
 		{
@@ -148,13 +143,15 @@ private:
 			{
 				std::unique_lock<std::mutex> locker(m_watchDogs[id].watchDogMutex);
 
-				if (m_watchDogs[id].watchDogCondition.wait_until(locker, m_watchDogs[id].timePoint + 5000000 * 1ms) ==
+				if (m_watchDogs[id].watchDogCondition.wait_until(locker, m_watchDogs[id].timePoint + 5000 * 1ms) ==
 					std::cv_status::timeout)
 				{
 					assert(!"Function timed out");
 					// restart thread
 				}
 			}
+
+			std::this_thread::sleep_for(1ms);
 		}
 	}
 
