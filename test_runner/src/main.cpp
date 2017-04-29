@@ -1,9 +1,8 @@
-#include "cpu_export_api.h"
+#include "test_runner.h"
 #include <iostream>
 
 int main()
 {
-
-
-	return 0;
+	TestRunnerEnv::TestRunner runner;
+	runner.start();
 }

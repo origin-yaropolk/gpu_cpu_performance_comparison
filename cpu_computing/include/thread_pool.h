@@ -37,9 +37,12 @@ private:
 
 private:
 
-#ifdef TEST_RUNNER_ENVORONMENT
+#ifdef TEST_RUNNER_ENVIRONMENT
+
 public:
+
 #endif
+
 	size_t m_threadsNumber;
 	std::vector<std::thread> m_threads;
 
@@ -55,6 +58,12 @@ private:
 
 private:
 
+#ifdef TEST_RUNNER_ENVIRONMENT
+
+public:
+
+#endif
+
 	ThreadPool() : ThreadPool(std::thread::hardware_concurrency() - 1)
 	{
 	}
@@ -69,8 +78,6 @@ private:
 			m_threadsSynchronize[i];
 			m_threads[i] = std::thread(&ThreadPool::taskHandler, this, i);
 		}
-
-		//m_threadTimeoutController = std::thread(&ThreadPool::timeoutController, this);
 	}
 
 public:
@@ -85,15 +92,12 @@ public:
 
 	~ThreadPool()
 	{
-		for (size_t i = 0; i < m_threadsNumber; ++i)
-		{
-			completeThread(i);
 
-			if (m_threads[i].joinable())
-			{
-				m_threads[i].join();
-			}
-		}
+#ifndef TEST_RUNNER_ENVIRONMENT
+
+		completeAllThreads();
+#endif
+
 	}
 
 	template <typename F, typename... Args>
@@ -123,23 +127,6 @@ public:
 	}
 
 private:
-
-// 	void restartDanglingThread(size_t id)
-// 	{
-// 		TerminateThread(m_threads[id].native_handle(), 0);
-// 		m_threads[id] = std::thread(&ThreadPool::taskHandler, this, id);
-// 	}
-// 
-// 	void timeoutController()
-// 	{
-// 		for (;;)
-// 		{
-// 			std::unique_lock<std::mutex> lk(m_mutex);
-// 			m_waitCondition.wait(lk, [&] { return m_counter != 0; });
-// 
-// 
-// 		}
-// 	}
 
 	/** executes passed tasks */
 	void taskHandler(size_t id)
@@ -178,12 +165,6 @@ private:
 					break;
 				}
 
-// 				if (m_useTimeout)
-// 				{
-// 					++m_counter;
-// 					m_waitCondition.notify_one();
-// 				}
-
 				callable.second.task();
 
 				//
@@ -209,6 +190,9 @@ private:
 		}
 	}
 
+#ifdef TEST_RUNNER_ENVIRONMENT
+public:
+#endif
 	// send complete signal for specified thread
 	void completeThread(size_t id)
 	{
@@ -219,6 +203,21 @@ private:
 
 		ts.condition.notify_one();
 	}
+
+	void completeAllThreads()
+	{
+		for (size_t i = 0; i < m_threadsNumber; ++i)
+		{
+			completeThread(i);
+
+			if (m_threads[i].joinable())
+			{
+				m_threads[i].join();
+			}
+		}
+	}
+
+private:
 
 	/** ATOMIC OPERATIONS **/
 
