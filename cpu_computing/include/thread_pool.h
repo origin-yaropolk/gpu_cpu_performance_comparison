@@ -349,7 +349,8 @@ private:
 		for (size_t i = 1; i < m_threadsNumber; ++i)
 		{
 			std::lock_guard<std::mutex> locker{ m_threadsSynchronize[i].mutex };
-			if (m_threadsSynchronize[i].queue.size() < smallest)
+			if (m_threadsSynchronize[i].queue.size() < smallest &&
+				!m_threadsSynchronize[i].threadInactive.load())
 			{
 				smallest = m_threadsSynchronize[i].queue.size();
 				minElem = i;
