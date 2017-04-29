@@ -7,6 +7,7 @@
 #include <queue>
 #include <map>
 #include <cstddef>
+#include <cassert>
 #include <windows.h>
 
 namespace BlackBox
@@ -35,12 +36,21 @@ private:
 		std::queue<TaskWrapper> queue;
 	};
 
+	struct WatchDog
+	{
+		std::mutex watchDogMutex;
+		std::condition_variable watchDogCondition;
+		std::thread watchDogThread;
+
+		std::chrono::time_point<std::chrono::system_clock> timePoint;
+		std::atomic_bool taskStarted;
+		std::atomic_bool completeWatchDogThread;
+	};
+
 private:
 
 #ifdef TEST_RUNNER_ENVIRONMENT
-
 public:
-
 #endif
 
 	size_t m_threadsNumber;
@@ -48,27 +58,31 @@ public:
 
 private:
 	std::map<size_t, ThreadSynchronization> m_threadsSynchronize;
+	std::vector<WatchDog> m_watchDogs;
 
 private:
 
 #ifdef TEST_RUNNER_ENVIRONMENT
-
 public:
-
 #endif
 
-	ThreadPool() : ThreadPool(std::thread::hardware_concurrency() - 1)
+	ThreadPool() 
+		: ThreadPool(std::thread::hardware_concurrency())
 	{
 	}
 
-	ThreadPool(size_t threads_n) 
-		: m_threadsNumber(threads_n)
+	ThreadPool(size_t threadsNumber) 
+		: m_threadsNumber(threadsNumber)
 		, m_threads(m_threadsNumber)
+		, m_watchDogs(m_threadsNumber)
 	{
 		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
 			m_threadsSynchronize[i];
 			m_threads[i] = std::thread(&ThreadPool::taskHandler, this, i);
+
+			m_watchDogs[i].watchDogThread = std::thread(&ThreadPool::watchDog, this, i);
+			m_watchDogs[i].completeWatchDogThread.store(false);
 		}
 	}
 
@@ -86,9 +100,7 @@ public:
 	{
 
 #ifndef TEST_RUNNER_ENVIRONMENT
-
 		completeAllThreads();
-
 #endif
 
 	}
@@ -120,6 +132,31 @@ public:
 	}
 
 private:
+
+	void watchDog(size_t id)
+	{
+		using namespace std::chrono_literals;
+
+		auto threadExecutes = [this, id]()
+		{
+			return !m_watchDogs[id].taskStarted.load();
+		};
+		
+		while(!m_watchDogs[id].completeWatchDogThread.load())
+		{
+			while (m_watchDogs[id].taskStarted)
+			{
+				std::unique_lock<std::mutex> locker(m_watchDogs[id].watchDogMutex);
+
+				if (m_watchDogs[id].watchDogCondition.wait_until(locker, m_watchDogs[id].timePoint + 5000000 * 1ms) ==
+					std::cv_status::timeout)
+				{
+					assert(!"Function timed out");
+					// restart thread
+				}
+			}
+		}
+	}
 
 	/** executes passed tasks */
 	void taskHandler(size_t id)
@@ -158,7 +195,13 @@ private:
 					break;
 				}
 
+				m_watchDogs[id].timePoint = std::chrono::system_clock::now();
+				m_watchDogs[id].taskStarted.store(true);
+
 				callable.second.task();
+
+				m_watchDogs[id].taskStarted.store(false);
+				m_watchDogs[id].watchDogCondition.notify_one();
 
 				//
 				// Remove task from queue must be after
@@ -186,6 +229,7 @@ private:
 #ifdef TEST_RUNNER_ENVIRONMENT
 public:
 #endif
+
 	// send complete signal for specified thread
 	void completeThread(size_t id)
 	{
@@ -206,6 +250,13 @@ public:
 			if (m_threads[i].joinable())
 			{
 				m_threads[i].join();
+			}
+
+			m_watchDogs[i].completeWatchDogThread.store(true);
+
+			if (m_watchDogs[i].watchDogThread.joinable())
+			{
+				m_watchDogs[i].watchDogThread.join();
 			}
 		}
 	}
