@@ -21,6 +21,7 @@ public:
 	ThreadPoolExecutionTest();
 
 	virtual void run() override;
+	virtual std::string name() override;
 
 private:
 	static void testFunction();

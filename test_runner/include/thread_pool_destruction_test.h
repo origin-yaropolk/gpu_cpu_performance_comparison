@@ -19,6 +19,7 @@ public:
 	ThreadPoolDestructionTest();
 
 	virtual void run() override;
+	virtual std::string name() override;
 
 private:
 	using thread_pool_type = BlackBox::ThreadPool<void>;

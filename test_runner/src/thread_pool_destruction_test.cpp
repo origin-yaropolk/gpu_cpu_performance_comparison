@@ -3,6 +3,7 @@
 #include "thread_pool_destruction_test.h"
 #include "thread_pool.h"
 #include <iostream>
+#include <string>
 
 namespace TestCase
 {
@@ -14,8 +15,6 @@ ThreadPoolDestructionTest::ThreadPoolDestructionTest()
 
 void ThreadPoolDestructionTest::run()
 {
-	std::cout << "Thread pool destruction test started:" << std::endl;
-
 	try
 	{
 		m_testingObject = new thread_pool_type;
@@ -24,7 +23,7 @@ void ThreadPoolDestructionTest::run()
 
 		for (std::size_t id = 0; id < m_testingObject->m_threadsNumber; ++id)
 		{
-			std::cout << "Trying to complete thread #" << id << "..." << std::endl;
+			std::cout << "Trying to complete thread #" << id << "... ";
 
 			m_testingObject->completeThread(id);
 
@@ -32,7 +31,7 @@ void ThreadPoolDestructionTest::run()
 			{
 				m_testingObject->m_threads[id].join();
 
-				std::cout << "Thread #" << id << " successful destroyed!" << std::endl;
+				std::cout << "Successful destroyed!" << std::endl;
 			}
 		}
 
@@ -43,8 +42,11 @@ void ThreadPoolDestructionTest::run()
 		std::cout << "Test failed!" << std::endl;
 		std::cout << e.what() << std::endl;
 	}
+}
 
-	std::cout << std::endl << std::endl;
+std::string ThreadPoolDestructionTest::name()
+{
+	return std::string("ThreadPoolDestructionTest");
 }
 
 }

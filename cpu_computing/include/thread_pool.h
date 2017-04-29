@@ -48,13 +48,6 @@ public:
 
 private:
 	std::map<size_t, ThreadSynchronization> m_threadsSynchronize;
-	bool m_useTimeout;
-
-	// timeout control
-	std::thread m_threadTimeoutController;
-	std::condition_variable m_waitCondition;
-	std::mutex m_mutex;
-	size_t m_counter;
 
 private:
 
@@ -71,7 +64,6 @@ public:
 	ThreadPool(size_t threads_n) 
 		: m_threadsNumber(threads_n)
 		, m_threads(m_threadsNumber)
-		, m_useTimeout(false)
 	{
 		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
@@ -96,6 +88,7 @@ public:
 #ifndef TEST_RUNNER_ENVIRONMENT
 
 		completeAllThreads();
+
 #endif
 
 	}
@@ -105,7 +98,7 @@ public:
 	{
 		TaskWrapper newTask = binder(f, std::forward<Args>(params)...);
 		ResultType futureObject = newTask.task.get_future();
-		ThreadSynchronization& ts = findMinimumLoadQueue();
+		ThreadSynchronization& ts = findMinimumLoadedThread();
 
 		putTask(ts, std::move(newTask));
 		ts.condition.notify_one();
@@ -275,7 +268,7 @@ private:
 		return newWrapper;
 	}
 
-	ThreadSynchronization& findMinimumLoadQueue()
+	ThreadSynchronization& findMinimumLoadedThread()
 	{
 		m_threadsSynchronize[0].mutex.lock();
 		auto smallest = m_threadsSynchronize[0].queue.size();

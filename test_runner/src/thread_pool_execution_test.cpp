@@ -14,12 +14,14 @@ ThreadPoolExecutionTest::ThreadPoolExecutionTest()
 
 void ThreadPoolExecutionTest::run()
 {
-	std::cout << "Thread pool execution test started:" << std::endl;
+	std::cout << "Add " << s_tasksCounter << " tasks for execution" << std::endl;
 
 	for (std::size_t i = 0; i < s_tasksCounter; ++i)
 	{
 		m_testingObject->addTask(testFunction);
 	}
+
+	std::cout << "Waiting all threads..."<< std::endl;
 
 	m_testingObject->waitAll();
 
@@ -29,6 +31,11 @@ void ThreadPoolExecutionTest::run()
 	}
 
 	m_testingObject->completeAllThreads();
+}
+
+std::string ThreadPoolExecutionTest::name()
+{
+	return std::string("ThreadPoolExecutionTest");
 }
 
 void ThreadPoolExecutionTest::testFunction()
