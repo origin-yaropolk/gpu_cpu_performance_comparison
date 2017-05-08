@@ -9,39 +9,47 @@ namespace TestCase
 {
 
 ThreadPoolDestructionTest::ThreadPoolDestructionTest()
-	: m_testingObject(nullptr)
 {
 }
 
-void ThreadPoolDestructionTest::run()
+bool ThreadPoolDestructionTest::run()
 {
+	m_testingObject.reset(new PimplHelper<thread_pool_type>(std::thread::hardware_concurrency(), 5000));
+
+	bool result = false;
+
 	try
 	{
-		m_testingObject = new thread_pool_type;
+		std::cout << "Thread pool successful create " << (*m_testingObject.get())->m_threadsNumber << " threads" << std::endl;
 
-		std::cout << "Thread pool successful create " << m_testingObject->m_threadsNumber << " threads" << std::endl;
-
-		for (std::size_t id = 0; id < m_testingObject->m_threadsNumber; ++id)
+		for (std::size_t id = 0; id < (*m_testingObject.get())->m_threadsNumber; ++id)
 		{
 			std::cout << "Trying to complete thread #" << id << "... ";
 
-			m_testingObject->completeThread(id);
+			(*m_testingObject.get())->completeThread(id);
 
-			if (m_testingObject->m_threads[id].joinable())
+			if ((*m_testingObject.get())->m_threads[id].joinable())
 			{
-				m_testingObject->m_threads[id].join();
+				(*m_testingObject.get())->m_threads[id].join();
 
 				std::cout << "Successful destroyed!" << std::endl;
 			}
-		}
 
-		delete m_testingObject;
+			(*m_testingObject.get())->m_watchDogs[id].completeWatchDogThread.store(true);
+
+			if ((*m_testingObject.get())->m_watchDogs[id].watchDogThread.joinable())
+			{
+				(*m_testingObject.get())->m_watchDogs[id].watchDogThread.join();
+			}
+		}
 	}
 	catch (std::exception const& e)
 	{
 		std::cout << "Test failed!" << std::endl;
 		std::cout << e.what() << std::endl;
 	}
+
+	return true;
 }
 
 std::string ThreadPoolDestructionTest::name()

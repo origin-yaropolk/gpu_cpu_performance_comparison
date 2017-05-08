@@ -22,7 +22,8 @@ void processPartJob(ThreadSpecificDataHolder specific);
 std::vector<ThreadSpecificDataHolder> distributeTasks(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
-	PerfComparison::Matrix<double>& result
+	PerfComparison::Matrix<double>& result,
+	BlackBox::TestingThreadPool<void>* testingThreadPool
 );
 
 }

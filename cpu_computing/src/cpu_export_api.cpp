@@ -1,5 +1,3 @@
-#define DLLAPI_EXPORT
-
 #include "cpu_export_api.h"
 #include "cpu_helper_api.h"
 #include "thread_pool.h"
@@ -8,25 +6,39 @@
 #include <future>
 #include <cassert>
 
-CPU_API_EXPORT bool multiplyMatrices(
+bool multiplyMatrices(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
-	PerfComparison::Matrix<double>& result)
+	PerfComparison::Matrix<double>& result,
+	BlackBox::TestingThreadPool<void>* testingThreadPool)
 {
 	std::vector<Helpers::ThreadSpecificDataHolder> taskPackets =
-		Helpers::distributeTasks(first, second, result);
+		Helpers::distributeTasks(first, second, result, testingThreadPool);
 
-	BlackBox::ThreadPool<void>& threadPool =
-		BlackBox::ThreadPool<void>::instance();
+	BlackBox::ThreadPool<void>* threadPool = nullptr;
+
+	if (testingThreadPool == nullptr)
+	{
+		threadPool = &BlackBox::ThreadPool<void>::instance();
+	}
+	else
+	{
+		threadPool = testingThreadPool;
+	}
 
 	for (size_t i = 0; i < taskPackets.size(); ++i)
 	{
-		threadPool.addTask(Helpers::processPartJob, taskPackets[i]);
+		threadPool->addTask(Helpers::processPartJob, taskPackets[i]);
 	}
 
 	processPartJob(taskPackets[taskPackets.size() - 1]);
 
-	threadPool.waitAll();
+	threadPool->waitAll();
+
+	if (testingThreadPool)
+	{
+		testingThreadPool->completeAllThreads();
+	}
 
 	return true;
 }

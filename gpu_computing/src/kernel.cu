@@ -14,7 +14,7 @@ namespace
 	const size_t BLOCK_SIZE = 32;
 }
 
-typedef struct Matrix
+struct Matrix
 {
 	size_t width;
 	size_t height;
@@ -118,7 +118,7 @@ __global__ void DisplayMatrixKernel(Matrix const& Mat)
 GPU_API_EXPORT  void DisplayMatrix(double const* matrix, size_t size, char* name)
 {
 	std::cout << std::endl << name << std::endl;
-	for (int i = 0; i < size*size; i++)
+	for (size_t i = 0; i < size*size; i++)
 	{
 		if (i % size == 0)
 		{

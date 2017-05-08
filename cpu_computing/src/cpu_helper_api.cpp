@@ -32,7 +32,8 @@ void processPartJob(ThreadSpecificDataHolder specific)
 std::vector<ThreadSpecificDataHolder> distributeTasks(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
-	PerfComparison::Matrix<double>& result)
+	PerfComparison::Matrix<double>& result,
+	BlackBox::TestingThreadPool<void>* testingThreadPool)
 {
 	const bool isMatricesValidForMultiply = first.rows() == second.columns();
 
@@ -44,11 +45,19 @@ std::vector<ThreadSpecificDataHolder> distributeTasks(
 		throw std::invalid_argument{ "Incompatible sizes of matrices" };
 	}
 
-	BlackBox::ThreadPool<void>& threadPool = 
-		BlackBox::ThreadPool<void>::instance();
+	BlackBox::ThreadPool<void>* threadPool = nullptr;
+
+	if (testingThreadPool == nullptr)
+	{
+		threadPool = &BlackBox::ThreadPool<void>::instance();
+	}
+	else
+	{
+		threadPool = testingThreadPool;
+	}
 
 	// plus main thread
-	size_t threadsNumber = threadPool.workingThreads() + 1;
+	size_t threadsNumber = threadPool->workingThreads() + 1;
 
 	const size_t payloadPerThread = first.rows() / threadsNumber;
 	const size_t remainderPerThread = first.rows() % threadsNumber;

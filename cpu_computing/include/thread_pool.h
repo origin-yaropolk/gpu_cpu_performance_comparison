@@ -14,10 +14,80 @@
 namespace BlackBox
 {
 
-//--------------------------------------------------------------
+#ifdef TEST_RUNNER_ENVIRONMENT
+
+class IMessage
+{
+public:
+	enum
+	{
+		ThreadKilled
+	};
+
+	virtual int type() const noexcept = 0;
+};
+
+class ThreadKilledMessage : public IMessage
+{
+public:
+	ThreadKilledMessage(std::size_t id)
+		: m_threadId(id)
+	{
+	}
+
+	std::size_t id() const noexcept
+	{
+		return m_threadId;
+	}
+	
+	virtual int type() const noexcept override
+	{
+		return ThreadKilled;
+	}
+
+private:
+	std::size_t m_threadId;
+};
+
+class TestReceiver
+{
+public:
+	virtual void receiveMessage(const IMessage& message) = 0;
+};
+
+
+class TestMessager
+{
+public:
+	void SendMessage(const IMessage& message) noexcept
+	{
+		for (TestReceiver* receiver : m_receivers)
+		{
+			receiver->receiveMessage(message);
+		}
+	}
+
+	void addReceiver(TestReceiver* receiver)
+	{
+		if (std::find(std::begin(m_receivers), std::end(m_receivers), receiver) == std::end(m_receivers))
+		{
+			m_receivers.push_back(receiver);
+		}
+	}
+
+private:
+	std::vector<TestReceiver*> m_receivers;
+};
+
+#endif
 
 template <typename ReturnT>
 class ThreadPool
+
+#ifdef TEST_RUNNER_ENVIRONMENT
+	: public TestMessager
+#endif
+
 {
 	/** DATA AND INTERNAL DATA TYPES **/
 private:
@@ -38,6 +108,8 @@ private:
 		std::atomic_bool threadInactive = false;
 	};
 
+protected:
+
 	struct WatchDog
 	{
 		std::mutex watchDogMutex;
@@ -49,34 +121,26 @@ private:
 		std::atomic_bool completeWatchDogThread;
 	};
 
-private:
-
-#ifdef TEST_RUNNER_ENVIRONMENT
-public:
-#endif
-
 	size_t m_threadsNumber;
 	std::vector<std::thread> m_threads;
+	std::vector<WatchDog> m_watchDogs;
+	std::size_t m_functionTimeoutMs;
 
 private:
 	std::map<size_t, ThreadSynchronization> m_threadsSynchronize;
-	std::vector<WatchDog> m_watchDogs;
 
-private:
+protected:
 
-#ifdef TEST_RUNNER_ENVIRONMENT
-public:
-#endif
-
-	ThreadPool() 
+	ThreadPool()
 		: ThreadPool(std::thread::hardware_concurrency())
 	{
 	}
-
-	ThreadPool(size_t threadsNumber) 
+	
+	ThreadPool(size_t threadsNumber, std::size_t functionTimeoutMs = 60 * 5 * 1000)
 		: m_threadsNumber(threadsNumber)
 		, m_threads(m_threadsNumber)
 		, m_watchDogs(m_threadsNumber)
+		, m_functionTimeoutMs(functionTimeoutMs)
 	{
 		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
@@ -92,6 +156,10 @@ public:
 
 	typedef std::shared_future<ReturnT> ResultType;
 
+	//
+	// If this function would be called in test runner environment
+	// Then will be crash when program closes
+	//
 	static ThreadPool& instance()
 	{
 		static ThreadPool threadPool;
@@ -145,7 +213,7 @@ private:
 			{
 				std::unique_lock<std::mutex> locker(m_watchDogs[id].watchDogMutex);
 
-				if (m_watchDogs[id].watchDogCondition.wait_until(locker, m_watchDogs[id].timePoint + 5000 * 1ms) ==
+				if (m_watchDogs[id].watchDogCondition.wait_until(locker, m_watchDogs[id].timePoint + std::chrono::milliseconds(m_functionTimeoutMs)) ==
 					std::cv_status::timeout)
 				{
 					std::cout << "Thread #" << id << " restarted!" << std::endl;
@@ -245,10 +313,12 @@ private:
 		}
 	}
 
-#ifdef TEST_RUNNER_ENVIRONMENT
-public:
-#endif
+protected:
 
+
+#ifdef TEST_RUNNER_ENVIRONMENT
+	public:
+#endif
 	// send complete signal for specified thread
 	void completeThread(size_t id)
 	{
@@ -374,5 +444,38 @@ private:
 		return true;
 	}
 };
-//--------------------------------------------------------------
+
+template <typename ReturnT>
+class TestingThreadPool : public ThreadPool<ReturnT>
+{
+	using Base = ThreadPool<ReturnT>;
+
+public:
+
+	TestingThreadPool()
+		: Base()
+	{
+	}
+
+	TestingThreadPool(std::size_t threadsNumber, std::size_t functionTimeoutMs = 60 * 5 * 1000)
+		: Base(threadsNumber, functionTimeoutMs)
+	{
+	}
+
+	//
+	// here I cannot to write: using Base::Base;
+	// because I'm using Visual Studio. Hello from 2017 ;)
+	//
+
+	using Base::WatchDog;
+
+	using Base::completeThread;
+	using Base::completeAllThreads;
+
+	using Base::m_threadsNumber;
+	using Base::m_threads;
+	using Base::m_watchDogs;
+	using Base::m_functionTimeoutMs;
+};
+
 } // end of namespace BlackBox

@@ -9,47 +9,39 @@
 #include <chrono>
 #include <iostream>
 
-void function()
-{
-	using namespace std::chrono_literals;
-
-	std::this_thread::sleep_for(10s);
-}
-
 int main()
 {
-	BlackBox::ThreadPool<void>* threadPool = &BlackBox::ThreadPool<void>::instance();
-	threadPool->addTask(function);
+	const size_t n = 128;
 
-// 	const size_t n = 128;
-// 
-// 	PerfComparison::Matrix<double> matrixA{ n, n };
-// 	PerfComparison::Matrix<double> matrixB{ n, n };
-// 	PerfComparison::Matrix<double> result{ matrixA.rows(), matrixB.columns() };
-// 
-// 	for (size_t i = 0; i < matrixA.rows(); ++i)
-// 	{
-// 		for (size_t j = 0; j < matrixA.columns(); ++j)
-// 		{
-// 			matrixA[i][j] = 1;
-// 		}
-// 	}
-// 
-// 	for (size_t i = 0; i < matrixB.rows(); ++i)
-// 	{
-// 		for (size_t j = 0; j < matrixB.columns(); ++j)
-// 		{
-// 			matrixB[i][j] = 1;
-// 		}
-// 	}
-// 
-// 	auto start = std::chrono::high_resolution_clock::now();
-// 
-// 	multiplyMatrices(matrixA, matrixB, result);
-// 
-// 	auto end = std::chrono::high_resolution_clock::now();
-// 
-// 	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms";
+	PerfComparison::Matrix<double> matrixA{ n, n };
+	PerfComparison::Matrix<double> matrixB{ n, n };
+	PerfComparison::Matrix<double> result{ matrixA.rows(), matrixB.columns() };
+
+	for (size_t i = 0; i < matrixA.rows(); ++i)
+	{
+		for (size_t j = 0; j < matrixA.columns(); ++j)
+		{
+			matrixA[i][j] = 1;
+		}
+	}
+
+	for (size_t i = 0; i < matrixB.rows(); ++i)
+	{
+		for (size_t j = 0; j < matrixB.columns(); ++j)
+		{
+			matrixB[i][j] = 1;
+		}
+	}
+
+	auto start = std::chrono::high_resolution_clock::now();
+
+	multiplyMatrices(matrixA, matrixB, result);
+
+	auto end = std::chrono::high_resolution_clock::now();
+
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
+
+	std::cout << result[0][0] << std::endl;
 
 	Helpers::waitInput();
 }

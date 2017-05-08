@@ -1,14 +1,16 @@
 #pragma once
 
 #include "itest_case.h"
+#include "pimpl_helper.h"
 #include <cstddef>
 #include <mutex>
+#include <memory>
 
 namespace BlackBox
 {
 
 template <typename ReturnT>
-class ThreadPool;
+class TestingThreadPool;
 
 }
 
@@ -20,7 +22,7 @@ class ThreadPoolExecutionTest : public ITestCase
 public:
 	ThreadPoolExecutionTest();
 
-	virtual void run() override;
+	virtual bool run() override;
 	virtual std::string name() override;
 
 private:
@@ -32,9 +34,9 @@ private:
 	static const std::size_t s_tasksCounter;
 
 private:
-	using thread_pool_type = BlackBox::ThreadPool<void>;
+	using thread_pool_type = BlackBox::TestingThreadPool<void>;
 
-	thread_pool_type* m_testingObject;
+	std::unique_ptr<PimplHelper<thread_pool_type>> m_testingObject;
 };
 
 }

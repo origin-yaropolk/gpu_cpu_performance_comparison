@@ -1,19 +1,11 @@
 #pragma once
 
-#ifdef DLLAPI_EXPORT
-
-#define CPU_API_EXPORT __declspec(dllexport)
-
-#else
-
-#define CPU_API_EXPORT __declspec(dllimport)
-
-#endif
-
 #include "matrix.h"
+#include "thread_pool.h"
 
-CPU_API_EXPORT bool multiplyMatrices(
+bool multiplyMatrices(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
-	PerfComparison::Matrix<double>& result
+	PerfComparison::Matrix<double>& result,
+	BlackBox::TestingThreadPool<void>* testingThreadPool = nullptr
 );

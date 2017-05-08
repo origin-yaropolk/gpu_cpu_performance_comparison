@@ -8,29 +8,39 @@ namespace TestCase
 {
 
 ThreadPoolExecutionTest::ThreadPoolExecutionTest()
-	: m_testingObject(&thread_pool_type::instance())
 {
 }
 
-void ThreadPoolExecutionTest::run()
+bool ThreadPoolExecutionTest::run()
 {
+	m_testingObject.reset(new PimplHelper<thread_pool_type>);
+
 	std::cout << "Add " << s_tasksCounter << " tasks for execution" << std::endl;
 
 	for (std::size_t i = 0; i < s_tasksCounter; ++i)
 	{
-		m_testingObject->addTask(testFunction);
+		(*m_testingObject.get())->addTask(testFunction);
 	}
 
 	std::cout << "Waiting all threads..."<< std::endl;
 
-	m_testingObject->waitAll();
+	(*m_testingObject.get())->waitAll();
+
+	bool result = false;
 
 	if (s_executionCounter == s_tasksCounter)
 	{
 		std::cout << "All tasks successful executed!" << std::endl;
+		result = true;
+	}
+	else
+	{
+		result = false;
 	}
 
-	m_testingObject->completeAllThreads();
+	(*m_testingObject.get())->completeAllThreads();
+
+	return result;
 }
 
 std::string ThreadPoolExecutionTest::name()
