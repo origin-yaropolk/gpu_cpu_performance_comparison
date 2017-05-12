@@ -11,10 +11,11 @@ namespace TestRunnerEnv
 
 TestRunner::TestRunner()
 {
-	m_testCaseItems.push_back(std::make_unique<TestCase::CorrectnessCpuCalculationsTest>());
+	//m_testCaseItems.push_back(std::make_unique<TestCase::CorrectnessCpuCalculationsTest>());
 	m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolDestructionTest>());
 	m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolExecutionTest>());
 	m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolWatchDogTest>());
+	m_testCaseItems.push_back(std::make_unique<TestCase::CorrectnessGpuCalculationsTest>());
 }
 
 void TestRunner::start()

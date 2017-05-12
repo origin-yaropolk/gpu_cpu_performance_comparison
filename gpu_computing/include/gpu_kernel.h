@@ -17,7 +17,7 @@ extern "C"
 {
 #endif
 
-GPU_API_EXPORT void GPU_test(
+void GPU_test(
 	PerfComparison::Matrix<float> const& A, 
 	PerfComparison::Matrix<float> const& B, 
 	PerfComparison::Matrix<float> &C, float& ComputingTime

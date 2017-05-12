@@ -4,3 +4,4 @@
 #include "thread_pool_destruction_test.h"
 #include "correctness_cpu_calculations_test.h"
 #include "thread_pool_watch_dog_test.h"
+#include "correctness_gpu_calculations_test.h"
