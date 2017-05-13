@@ -36,6 +36,7 @@ void FillMatrix(PerfComparison::Matrix<double>& matrix)
 	}
 }
 
+
 size_t SizeMenuSelector(const string& title, const vector<string>& items)
 {
 	size_t selectorPos=0;
@@ -83,15 +84,18 @@ int main()
 	{
 		"32","64","128","256","512","1024","2048"
 	};
-	
-	const size_t sizesCount = 7;
-	const size_t availableSizes[sizesCount] = { 32,64,128,256,512,1024,2048 };
-	size_t matricesSize = availableSizes[SizeMenuSelector("Choose size:", sizeChooseMenuItems)];
-	size_t matricesCount = CountMenuSelector("Enter matrices count: ");
-	system("cls");
+
 	float GPUcomputingTime = 0;
 	long long CPUcomputingTime = 0;
+	const size_t sizesCount = 7;
+	const size_t availableSizes[sizesCount] = { 32,64,128,256,512,1024,2048 };
+	size_t matricesSize = availableSizes[SizeMenuSelector("Choose matrices size:", sizeChooseMenuItems)];
+	size_t matricesCount = CountMenuSelector("Enter matrices count: ");
+	system("cls");
+	
+	cout << "Parameters: \n  Matrix size = " << matricesSize << "\n  matricesCount = " << matricesCount << endl << endl;
 
+	cout << "Performing GPU calculations..." << endl;
 	for (auto i = 0; i < matricesCount; i++)
 	{
 		PerfComparison::Matrix<float> matrixA{ matricesSize, matricesSize };
@@ -104,8 +108,8 @@ int main()
 		GPUcomputingTime += tempTime;
 	}
 
-	cout << matricesCount << " matrices with " << matricesSize << " size was multiplyed on GPU for " << GPUcomputingTime << " ms" << endl;
-	
+	cout << "  computing Time - " << GPUcomputingTime << " ms" << endl << endl;
+	cout << "Performing CPU calculations..." << endl;
 	for (auto i = 0; i < matricesCount; i++)
 	{
 		PerfComparison::Matrix<double> matrixA{ matricesSize, matricesSize };
@@ -120,7 +124,17 @@ int main()
 		CPUcomputingTime += chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 	}
-	cout << matricesCount << " matrices with " << matricesSize << " size was multiplyed on CPU for " << CPUcomputingTime << " ms" << endl;
-	
+	cout << "  computing Time - " << CPUcomputingTime << " ms" << endl << endl;
+	if (CPUcomputingTime > GPUcomputingTime)
+	{
+		cout << "GPU x" << CPUcomputingTime / GPUcomputingTime << " faster than CPU" << endl;
+	}
+	else
+	{
+		cout << "CPU x" << GPUcomputingTime / CPUcomputingTime << " faster than GPU" << endl;
+	}
+	cout << "There are about " << matricesCount * (matricesSize * matricesSize * (matricesSize + matricesSize - 1)) << " floating operations performed and " << matricesCount *( 2 * matricesSize*matricesSize * sizeof(float)) << " bytes of information processed." << endl;
+
+
 	system("pause");
 }
