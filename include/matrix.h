@@ -4,6 +4,8 @@
 #include <memory>
 #include <cstddef>
 #include <cassert>
+#include <new>
+
 
 namespace PerfComparison
 {

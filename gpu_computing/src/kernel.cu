@@ -82,6 +82,8 @@ __global__ void GPU_test_helper(const Matrix A, const Matrix B, Matrix C)
 
 __host__ void WhatAnError(cudaError_t er)
 {
+#ifdef ERROR_DISPLAYING
+
 	switch (er)
 	{
 		//cudaSuccess
@@ -101,6 +103,7 @@ __host__ void WhatAnError(cudaError_t er)
 		//unknowError
 	default: std::cerr << "CUDA ERROR CODE: " << er << std::endl; break;
 	}
+#endif // ERROR_DISPLAYING
 }
 
 __global__ void DisplayMatrixKernel(Matrix const& Mat)
@@ -115,7 +118,7 @@ __global__ void DisplayMatrixKernel(Matrix const& Mat)
 	}
 }
 
-GPU_API_EXPORT  void DisplayMatrix(double const* matrix, size_t size, char* name)
+void DisplayMatrix(double const* matrix, size_t size, char* name)
 {
 	std::cout << std::endl << name << std::endl;
 	for (size_t i = 0; i < size*size; i++)
@@ -130,7 +133,7 @@ GPU_API_EXPORT  void DisplayMatrix(double const* matrix, size_t size, char* name
 	std::cout << std::endl;
 }
 
-GPU_API_EXPORT  void GPU_test(PerfComparison::Matrix<float> const& A, PerfComparison::Matrix<float> const& B, PerfComparison::Matrix<float> &C, float& ComputingTime)
+void GPU_test(PerfComparison::Matrix<float> const& A, PerfComparison::Matrix<float> const& B, PerfComparison::Matrix<float> &C, float& ComputingTime)
 {
 	cudaError_t error;
 	cudaEvent_t start, stop;
