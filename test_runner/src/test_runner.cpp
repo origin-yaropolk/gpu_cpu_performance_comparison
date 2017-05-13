@@ -12,9 +12,9 @@ namespace TestRunnerEnv
 TestRunner::TestRunner()
 {
 	m_testCaseItems.push_back(std::make_unique<TestCase::CorrectnessCpuCalculationsTest>());
-	m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolDestructionTest>());
-	m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolExecutionTest>());
-	m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolWatchDogTest>());
+	//m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolDestructionTest>());
+	//m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolExecutionTest>());
+	//m_testCaseItems.push_back(std::make_unique<TestCase::ThreadPoolWatchDogTest>());
 }
 
 void TestRunner::start()
@@ -22,7 +22,7 @@ void TestRunner::start()
 	std::string border;
 	border.assign(70, '_');
 
-	for (auto const& testCase : m_testCaseItems)
+	for (auto& testCase : m_testCaseItems)
 	{
 		std::cout << border << std::endl;
 
@@ -36,6 +36,8 @@ void TestRunner::start()
 		{
 			std::cout << std::setw(70) << "Test failed!" << std::setfill('.') << std::endl;
 		}
+
+		testCase.reset();
 
 		std::cout << border << std::endl << std::endl << std::endl;
 	}

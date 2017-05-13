@@ -84,10 +84,6 @@ private:
 template <typename ReturnT>
 class ThreadPool
 
-#ifdef TEST_RUNNER_ENVIRONMENT
-	: public TestMessager
-#endif
-
 {
 	/** DATA AND INTERNAL DATA TYPES **/
 private:
@@ -132,16 +128,18 @@ private:
 protected:
 
 	ThreadPool()
-		: ThreadPool(std::thread::hardware_concurrency())
+		: ThreadPool(std::thread::hardware_concurrency() - 1)
 	{
 	}
 	
-	ThreadPool(size_t threadsNumber, std::size_t functionTimeoutMs = 60 * 5 * 1000)
+	ThreadPool(size_t threadsNumber, size_t functionTimeoutMs = 60 * 5 * 1000)
 		: m_threadsNumber(threadsNumber)
-		, m_threads(m_threadsNumber)
-		, m_watchDogs(m_threadsNumber)
+		, m_threads(threadsNumber)
+		, m_watchDogs(threadsNumber)
 		, m_functionTimeoutMs(functionTimeoutMs)
 	{
+		m_threadsNumber = threadsNumber;
+
 		for (size_t i = 0; i < m_threadsNumber; ++i)
 		{
 			m_threadsSynchronize[i];

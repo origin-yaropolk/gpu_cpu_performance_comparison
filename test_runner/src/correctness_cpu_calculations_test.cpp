@@ -9,7 +9,7 @@ namespace TestCase
 {
 
 CorrectnessCpuCalculationsTest::CorrectnessCpuCalculationsTest()
-	: m_testingObject(std::thread::hardware_concurrency())
+	: m_testingObject(std::thread::hardware_concurrency() - 1)
 	, m_firstMatrix(s_squareMatrixSize, s_squareMatrixSize)
 	, m_secondMatrix(s_squareMatrixSize, s_squareMatrixSize)
 	, m_resultMatrix(m_firstMatrix.rows(), m_secondMatrix.columns())

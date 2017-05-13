@@ -13,7 +13,7 @@ ThreadPoolWatchDogTest::ThreadPoolWatchDogTest()
 	: m_testingObject(s_tasksCounter, s_functionTimeoutMs)
 	, m_restartedThreads(s_tasksCounter, false)
 {
-	m_testingObject->addReceiver(this);
+	//m_testingObject->addReceiver(this);
 }
 
 bool ThreadPoolWatchDogTest::run()

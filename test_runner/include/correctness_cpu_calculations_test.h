@@ -36,7 +36,7 @@ private:
 	PerfComparison::Matrix<double> m_resultMatrix;
 	PerfComparison::Matrix<double> m_etalonResultMatrix;
 
-	constexpr static int s_squareMatrixSize = 500;
+	constexpr static int s_squareMatrixSize = 512;
 };
 
 }
