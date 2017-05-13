@@ -7,21 +7,42 @@ namespace Helpers
 
 void processPartJob(ThreadSpecificDataHolder specific)
 {
+// 	for (size_t i = 0; i < specific.size; ++i)
+// 	{
+// 		PerfComparison::Matrix<double>::Row row =
+// 			specific.firstSourceMatrix[specific.startRow + i];
+// 
+// 		for (size_t j = 0; j < specific.secondSourceMatrix.columns(); ++j)
+// 		{
+// 			PerfComparison::Matrix<double>::Column secondMatrixColumn =
+// 				specific.secondSourceMatrix.columnAt(j);
+// 
+// 			double value = 0;
+// 
+// 			for (size_t k = 0; k < specific.secondSourceMatrix.rows(); ++k)
+// 			{
+// 				value += row[k] * secondMatrixColumn[k];
+// 			}
+// 
+// 			specific.resultMatrix[specific.startRow + i][j] = value;
+// 		}
+// 	}
+
 	for (size_t i = 0; i < specific.size; ++i)
 	{
-		PerfComparison::Matrix<double>::Row row =
-			specific.firstSourceMatrix[specific.startRow + i];
+		const double* firstMatrixPtr = specific.firstSourceMatrix.get();
+		const double* firstMatrixRowPtr = &firstMatrixPtr[specific.startRow + i];
 
 		for (size_t j = 0; j < specific.secondSourceMatrix.columns(); ++j)
 		{
-			PerfComparison::Matrix<double>::Column secondMatrixColumn =
-				specific.secondSourceMatrix.columnAt(j);
+			const double* secondMatrixPtr = specific.secondSourceMatrix.get();
+			const double* secondMatrixColumnPtr = &secondMatrixPtr[j];
 
 			double value = 0;
 
 			for (size_t k = 0; k < specific.secondSourceMatrix.rows(); ++k)
 			{
-				value += row[k] * secondMatrixColumn[k];
+				value += firstMatrixRowPtr[k] * secondMatrixColumnPtr[k + j];
 			}
 
 			specific.resultMatrix[specific.startRow + i][j] = value;

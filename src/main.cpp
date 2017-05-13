@@ -11,11 +11,12 @@
 
 int main()
 {
-	const size_t n = 128;
+	const size_t n = 4096;
 
 	PerfComparison::Matrix<double> matrixA{ n, n };
 	PerfComparison::Matrix<double> matrixB{ n, n };
 	PerfComparison::Matrix<double> result{ matrixA.rows(), matrixB.columns() };
+	PerfComparison::Matrix<double> etalon{ matrixA.rows(), matrixB.columns() };
 
 	for (size_t i = 0; i < matrixA.rows(); ++i)
 	{
@@ -33,6 +34,14 @@ int main()
 		}
 	}
 
+	for (size_t i = 0; i < etalon.rows(); ++i)
+	{
+		for (size_t j = 0; j < etalon.columns(); ++j)
+		{
+			etalon[i][j] = n;
+		}
+	}
+
 	auto start = std::chrono::high_resolution_clock::now();
 
 	multiplyMatrices(matrixA, matrixB, result);
@@ -41,7 +50,14 @@ int main()
 
 	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms\n";
 
-	std::cout << result[0][0] << std::endl;
+	if (!std::memcmp(etalon.get(), result.get(), n * n))
+	{
+		std::cout << "Result is valid!" << std::endl;
+	}
+	else
+	{
+		std::cout << "Result is invalid!" << std::endl;
+	}
 
 	Helpers::waitInput();
 }
