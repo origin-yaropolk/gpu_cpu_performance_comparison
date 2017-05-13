@@ -6,7 +6,7 @@
 #include <future>
 #include <cassert>
 
-bool multiplyMatrices(
+void multiplyMatrices(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
 	PerfComparison::Matrix<double>& result,
@@ -40,5 +40,4 @@ bool multiplyMatrices(
 		testingThreadPool->completeAllThreads();
 	}
 
-	return true;
 }

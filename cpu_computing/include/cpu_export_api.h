@@ -3,7 +3,7 @@
 #include "matrix.h"
 #include "thread_pool.h"
 
-bool multiplyMatrices(
+void multiplyMatrices(
 	PerfComparison::Matrix<double> const& first,
 	PerfComparison::Matrix<double> const& second,
 	PerfComparison::Matrix<double>& result,
