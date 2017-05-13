@@ -12,16 +12,6 @@
 #include <string>
 #include <conio.h>
 
-<<<<<<< HEAD
-int main()
-{
-	const size_t n = 4096;
-
-	PerfComparison::Matrix<double> matrixA{ n, n };
-	PerfComparison::Matrix<double> matrixB{ n, n };
-	PerfComparison::Matrix<double> result{ matrixA.rows(), matrixB.columns() };
-	PerfComparison::Matrix<double> etalon{ matrixA.rows(), matrixB.columns() };
-=======
 using namespace std;
 
 void FillMatrix(PerfComparison::Matrix<float>& matrix)
@@ -34,7 +24,6 @@ void FillMatrix(PerfComparison::Matrix<float>& matrix)
 		}
 	}
 }
->>>>>>> d1840fc21a7068cd20a55273c19b205c9f6b9bef
 
 void FillMatrix(PerfComparison::Matrix<double>& matrix)
 {
@@ -106,17 +95,6 @@ int main()
 	
 	cout << "Parameters: \n  Matrix size = " << matricesSize << "\n  matricesCount = " << matricesCount << endl << endl;
 
-<<<<<<< HEAD
-	for (size_t i = 0; i < etalon.rows(); ++i)
-	{
-		for (size_t j = 0; j < etalon.columns(); ++j)
-		{
-			etalon[i][j] = n;
-		}
-	}
-
-	auto start = std::chrono::high_resolution_clock::now();
-=======
 	cout << "Performing GPU calculations..." << endl;
 	for (auto i = 0; i < matricesCount; i++)
 	{
@@ -129,7 +107,6 @@ int main()
 		GPU_test(matrixA, matrixB, result, tempTime);
 		GPUcomputingTime += tempTime;
 	}
->>>>>>> d1840fc21a7068cd20a55273c19b205c9f6b9bef
 
 	cout << "  computing Time - " << GPUcomputingTime << " ms" << endl << endl;
 	cout << "Performing CPU calculations..." << endl;
@@ -158,17 +135,6 @@ int main()
 	}
 	cout << "There are about " << matricesCount * (matricesSize * matricesSize * (matricesSize + matricesSize - 1)) << " floating operations performed and " << matricesCount *( 2 * matricesSize*matricesSize * sizeof(float)) << " bytes of information processed." << endl;
 
-<<<<<<< HEAD
-	if (!std::memcmp(etalon.get(), result.get(), n * n))
-	{
-		std::cout << "Result is valid!" << std::endl;
-	}
-	else
-	{
-		std::cout << "Result is invalid!" << std::endl;
-	}
-=======
->>>>>>> d1840fc21a7068cd20a55273c19b205c9f6b9bef
 
 	system("pause");
 }
